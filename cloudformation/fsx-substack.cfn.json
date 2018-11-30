@@ -1,0 +1,121 @@
+{
+  "Conditions": {
+    "CreateFSX": {
+      "Fn::And": [
+        {
+          "Fn::Not": [
+            {
+              "Fn::Equals": [
+                {
+                  "Fn::Select": [
+                    "0",
+                    {
+                      "Ref": "FSXOptions"
+                    }
+                  ]
+                },
+                "NONE"
+              ]
+            }
+          ]
+        },
+        {
+          "Fn::Equals": [
+            {
+              "Fn::Select": [
+                "1",
+                {
+                  "Ref": "FSXOptions"
+                }
+              ]
+            },
+            "NONE"
+          ]
+        }
+      ]
+    },
+    "UseFSXKMSKey": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Fn::Select": [
+                "3",
+                {
+                  "Ref": "FSXOptions"
+                }
+              ]
+            },
+            "NONE"
+          ]
+        }
+      ]
+    },
+    "UseStorageCap": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Fn::Select": [
+                "2",
+                {
+                  "Ref": "FSXOptions"
+                }
+              ]
+            },
+            "NONE"
+          ]
+        }
+      ]
+    }
+  },
+  "Outputs": {
+    "FileSystemId": {
+      "Description": "ID of the FileSystem",
+      "Value": {
+        "Fn::Select": [
+          "1",
+          {
+            "Ref": "FSXOptions"
+          }
+        ]
+      }
+    }
+  },
+  "Parameters": {
+    "ComputeSecurityGroup": {
+      "Description": "SecurityGroup for FSx filesystem",
+      "Type": "String"
+    },
+    "FSXOptions": {
+      "Description": "Comma separated list of efs related options, 4 parameters in total",
+      "Type": "CommaDelimitedList"
+    },
+    "SubnetId": {
+      "Description": "SubnetId for FSx filesystem",
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "fakeVolume": {
+      "Properties": {
+        "AvailabilityZone": "us-east-2a",
+        "Encrypted": {
+          "Ref": "AWS::NoValue"
+        },
+        "Iops": {
+          "Ref": "AWS::NoValue"
+        },
+        "KmsKeyId": {
+          "Ref": "AWS::NoValue"
+        },
+        "Size": "20",
+        "SnapshotId": {
+          "Ref": "AWS::NoValue"
+        },
+        "VolumeType": "gp2"
+      },
+      "Type": "AWS::EC2::Volume"
+    }
+  }
+}

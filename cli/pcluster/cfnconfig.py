@@ -254,6 +254,61 @@ class ParallelClusterConfig(object):
         except AttributeError:
             pass
 
+    def __load_fsx_options(self, __config):  # noqa: C901 FIXME!!!
+        # Determine if FSx settings are defined and set section
+        try:
+            self.__fsx_settings = __config.get(self.__cluster_section, "fsx_settings")
+            if not self.__fsx_settings:
+                print("ERROR: fsx_settings defined but not set in [%s] section" % self.__cluster_section)
+                sys.exit(1)
+            self.__fsx_section = "fsx %s" % self.__fsx_settings
+        except configparser.NoOptionError:
+            pass
+
+        # Dictionary list of all FSx options
+        self.__fsx_options = OrderedDict(
+            [
+                ("shared_dir", ("FSXShared_dir", None)),
+                ("fsx_fs_id", ("FSXFileSystemId", "FSXFSId")),
+                ("storage_capacity", ("FSXCapacity", "FSX_size")),
+                ("fsx_kms_key_id", ("FSXKMSKeyId", None)),
+            ]
+        )
+
+        try:
+            if self.__fsx_section:
+                __temp_fsx_options = []
+                for key in self.__fsx_options:
+                    try:
+                        __temp__ = __config.get(self.__fsx_section, key)
+                        if not __temp__:
+                            print("ERROR: %s defined but not set in [%s] section" % (key, self.__fsx_section))
+                            sys.exit(1)
+                        # Separate sanity_check for fs_id, need to pass in fs_id and subnet_id
+                        if self.__sanity_check and self.__fsx_options.get(key)[1] == "FSXFSId":
+                            config_sanity.check_resource(
+                                self.region,
+                                self.aws_access_key_id,
+                                self.aws_secret_access_key,
+                                "FSXFSId",
+                                (__temp__, self.__master_subnet),
+                            )
+                        elif self.__sanity_check and self.__fsx_options.get(key)[1] is not None:
+                            config_sanity.check_resource(
+                                self.region,
+                                self.aws_access_key_id,
+                                self.aws_secret_access_key,
+                                self.__fsx_options.get(key)[1],
+                                __temp__,
+                            )
+                        __temp_fsx_options.append(__temp__)
+                    except configparser.NoOptionError:
+                        __temp_fsx_options.append("NONE")
+                        pass
+                self.parameters["FSXOptions"] = ",".join(__temp_fsx_options)
+        except AttributeError:
+            pass
+
     def __init__(self, args):  # noqa: C901 FIXME!!!
         self.args = args
         self.cluster_options = self.__init_cluster_options()
@@ -533,6 +588,8 @@ class ParallelClusterConfig(object):
 
         # Initialize EFS related options
         self.__get_efs_parameters(__config)
+
+        self.__load_fsx_options(__config)
 
         # Determine if scaling settings are defined and set section
         try:

@@ -19,6 +19,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from decimal import Decimal
 from urllib.parse import urlparse
 
 import boto3
@@ -41,6 +42,66 @@ def check_sg_rules_for_port(rule, port_to_check):
         # from all ports or NFS(port 2049), and does not have a security group restriction
         if (not port or port == port_to_check) and ip == "0.0.0.0/0" and not group:
             return True
+
+
+def check_fsx_fs_id(ec2, fsx, resource_value):  # noqa: C901 FIXME!!!
+    try:
+        # Check to see if there is any existing mt on the fs
+        fs = fsx.describe_file_systems(FileSystemIds=[resource_value[0]]).get("FileSystems")[0]
+        stack_vpc = ec2.describe_subnets(SubnetIds=[resource_value[1]]).get("Subnets")[0].get("VpcId")
+        # Check to see if fs is in the same VPC as the stack
+        if fs.get("VpcId") != stack_vpc:
+            print(
+                "Config sanity error: Current only support using FSx file system that is in the same VPC as the stack. "
+                "The file system provided is in %s" % fs.get("VpcId")
+            )
+            sys.exit(1)
+        # If there is an existing mt in the az, need to check the inbound and outbound rules of the security groups
+        network_interface_ids = fs.get("NetworkInterfaceIds")
+        network_interface_responses = ec2.describe_network_interfaces(NetworkInterfaceIds=network_interface_ids).get(
+            "NetworkInterfaces"
+        )
+        network_interfaces = []
+        for response in network_interface_responses:
+            if response.get("VpcId") == stack_vpc:
+                network_interfaces.append(response)
+        nfs_access = False
+        for network_interface in network_interfaces:
+            in_access = False
+            out_access = False
+            # Get list of security group IDs
+            sg_ids = []
+            for sg_info in network_interface.get("Groups"):
+                sg_ids.append(sg_info.get("GroupId"))
+            # Check each sg to see if the rules are valid
+            for sg in ec2.describe_security_groups(GroupIds=sg_ids).get("SecurityGroups"):
+                # Check all inbound rules
+                in_rules = sg.get("IpPermissions")
+                for rule in in_rules:
+                    if check_sg_rules_for_port(rule, 988):
+                        in_access = True
+                        break
+                out_rules = sg.get("IpPermissionsEgress")
+                for rule in out_rules:
+                    if check_sg_rules_for_port(rule, 988):
+                        out_access = True
+                        break
+                if in_access and out_access:
+                    nfs_access = True
+                    break
+            if nfs_access:
+                break
+        if not nfs_access:
+            print(
+                "Config sanity error: The current security group settings on file system %s does not satisfy "
+                "mounting requirement. The file system must be associated to a security group that allows "
+                "inbound and outbound TCP traffic from 0.0.0.0/0 through port 988." % resource_value[0]
+            )
+            sys.exit(1)
+        return True
+    except ClientError as e:
+        print("Config sanity error: %s" % e.response.get("Error").get("Message"))
+        sys.exit(1)
 
 
 def check_efs_fs_id(ec2, efs, resource_value):  # noqa: C901 FIXME!!!
@@ -388,6 +449,20 @@ def check_resource(  # noqa: C901 FIXME!!!
                     "the 'provisioned_throughput' option must be specified"
                 )
                 sys.exit(1)
+    # FSX FS Id check
+    elif resource_type == "FSXFSId":
+        ec2 = boto3.client(
+            "ec2", region_name=region, aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key
+        )
+        fsx = boto3.client(
+            "fsx", region_name=region, aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key
+        )
+        check_fsx_fs_id(ec2, fsx, resource_value)
+    # FSX capacity size check
+    elif resource_type == "FSX_size":
+        if Decimal(resource_value) % 3600 != 0 or Decimal(resource_value) < 3600:
+            print("Config sanity error: Capacity for FSx lustre filesystem, minimum of 3600 GB, increment of 3600 GB")
+            sys.exit(1)
     # Batch Parameters
     elif resource_type == "AWSBatch_Parameters":
         # Check region
