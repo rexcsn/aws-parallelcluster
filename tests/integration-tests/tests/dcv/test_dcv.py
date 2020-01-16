@@ -47,8 +47,8 @@ def test_dcv_configuration(
     env["AWS_DEFAULT_REGION"] = region
 
     # add ssh key to global known hosts file to avoid ssh keychecking prompt
-    host_keys_file = "/etc/ssh/ssh_known_hosts"
-    operating_system.system("ssh-keyscan -t rsa {0} > {1}".format(cluster.master_ip, host_keys_file))
+    host_keys_file = operating_system.path.expanduser("~/.ssh/known_hosts")
+    operating_system.system("ssh-keyscan -t rsa {0} >> {1}".format(cluster.master_ip, host_keys_file))
 
     try:
         result = run_command(["pcluster", "dcv", "connect", cluster.name, "--show-url"], env=env)
