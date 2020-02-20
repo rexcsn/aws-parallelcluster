@@ -237,10 +237,15 @@ class _FeatureWhitelistConfigGenerator(_ConfigGenerator):
 
     def generate(self, args, region, credentials):
         batch_instances = self._get_batch_instance_whitelist(region, credentials)
-        config = {"Features": {"efa": {"instances": args.efa_instances}, "batch": {"instances": batch_instances}}}
+        schema_config = {
+            "Features": {"efa": {"instances": args.efa_instances}, "batch": {"instances": batch_instances}}
+        }
         logging.info("Validating doc against its schema")
-        validate(instance=config, schema=self.SCHEMA)
-        return config
+        validate(instance=schema_config, schema=self.SCHEMA)
+        set_config = {
+            "Features": {"efa": {"instances": args.efa_instances}, "batch": {"instances": set(batch_instances)}}
+        }
+        return set_config
 
     @staticmethod
     def _get_batch_instance_whitelist(region, credentials):
@@ -438,12 +443,21 @@ def _generate_docs(args, sts_credentials):
     return files_to_upload
 
 
+class SetDecoder(json.JSONDecoder):
+    def default(self, obj):
+        if isinstance(obj, list):
+            return set(obj)
+        return json.JSONDecoder.default(self, obj)
+
+
 def _validate_documents_against_existing_version(args, files_to_upload, sts_credentials):
     for file in files_to_upload.keys():
         for region in args.regions:
             logging.info("Validating file %s in region %s", file, region)
             doc_manager = S3DocumentManager(region, sts_credentials.get(region))
-            current_file = json.loads(doc_manager.download(args.bucket.format(region=region), FILE_TO_S3_PATH[file]))
+            current_file = json.loads(
+                doc_manager.download(args.bucket.format(region=region), FILE_TO_S3_PATH[file]), cls=SetDecoder
+            )
             logging.info("Current version: %s", current_file)
             logging.info("New version: %s", files_to_upload[file][region])
             validate_document(args, current_file, files_to_upload[file][region])
