@@ -118,7 +118,7 @@ def test_nodewatcher_terminates_failing_node(scheduler, region, pcluster_config_
 @pytest.mark.scaling_with_manual_actions
 def test_scaling_with_manual_actions(scheduler, region, pcluster_config_reader, clusters_factory):
     """Test that slurm-specific scaling logic is resistent to manual actions and failures."""
-    num_compute_nodes = 5
+    num_compute_nodes = 100
     cluster_config = pcluster_config_reader(initial_queue_size=num_compute_nodes)
     cluster = clusters_factory(cluster_config)
     remote_command_executor = RemoteCommandExecutor(cluster)
@@ -266,12 +266,12 @@ def _terminate_nodes_manually(instance_ids):
     logging.info("Terminated nodes: {}".format(instance_ids))
 
 
-@retry(wait_fixed=seconds(20), stop_max_delay=minutes(10))
+@retry(wait_fixed=seconds(20), stop_max_delay=minutes(15))
 def _assert_nodes_removed_from_scheduler(scheduler_commands, nodes):
     assert_that(scheduler_commands.get_compute_nodes()).does_not_contain(*nodes)
 
 
-@retry(wait_fixed=seconds(20), stop_max_delay=minutes(10))
+@retry(wait_fixed=seconds(20), stop_max_delay=minutes(20))
 def _assert_num_nodes_in_scheduler(scheduler_commands, desired):
     assert_that(len(scheduler_commands.get_compute_nodes())).is_equal_to(desired)
 
