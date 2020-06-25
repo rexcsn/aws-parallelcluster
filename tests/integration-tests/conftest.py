@@ -383,7 +383,7 @@ def cfn_stacks_factory(request):
 AVAILABILITY_ZONE_OVERRIDES = {
     # c5.xlarge is not supported in us-east-1e
     # FSx Lustre file system creation is currently not supported for us-east-1e
-    "us-east-1": ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d", "us-east-1f"],
+    "us-east-1": ["us-east-1a", "us-east-1b"],
     # c4.xlarge is not supported in us-west-2d
     "us-west-2": ["us-west-2a", "us-west-2b", "us-west-2c"],
     # c5.xlarge is not supported in ap-southeast-2a

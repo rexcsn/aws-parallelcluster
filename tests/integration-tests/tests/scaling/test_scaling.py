@@ -66,8 +66,8 @@ def test_multiple_jobs_submission(scheduler, region, pcluster_config_reader, clu
     assert_no_errors_in_logs(remote_command_executor, ["/var/log/sqswatcher", "/var/log/jobwatcher"])
 
 
-@pytest.mark.regions(["sa-east-1"])
-@pytest.mark.instances(["c5.xlarge"])
+@pytest.mark.regions(["us-east-1"])
+@pytest.mark.instances(["c5a.xlarge"])
 @pytest.mark.schedulers(["slurm", "sge", "torque"])
 @pytest.mark.usefixtures("region", "os", "instance")
 @pytest.mark.nodewatcher
@@ -108,8 +108,8 @@ def test_nodewatcher_terminates_failing_node(scheduler, region, pcluster_config_
     assert_no_errors_in_logs(remote_command_executor, ["/var/log/sqswatcher", "/var/log/jobwatcher"])
 
 
-@pytest.mark.regions(["us-west-1"])
-@pytest.mark.instances(["c5.xlarge"])
+@pytest.mark.regions(["us-east-1"])
+@pytest.mark.instances(["c5a.xlarge"])
 @pytest.mark.schedulers(["slurm"])
 @pytest.mark.oss(["ubuntu1804"])
 @pytest.mark.usefixtures("region", "os", "instance")
