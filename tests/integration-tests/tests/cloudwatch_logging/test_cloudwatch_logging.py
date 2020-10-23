@@ -587,7 +587,7 @@ def get_config_param_vals():
 # 2) run the test for all of the OSes with slurm
 @pytest.mark.dimensions("ap-east-1", "c5.xlarge", "*", "slurm")
 # 3) run the test for a single scheduler-OS combination on an ARM instance
-@pytest.mark.dimensions("eu-west-1", "m6g.xlarge", "alinux2", "slurm")
+@pytest.mark.dimensions("us-east-1", "m6g.xlarge", "centos8", "slurm")
 def test_cloudwatch_logging(region, scheduler, instance, os, pcluster_config_reader, clusters_factory):
     """
     Test all CloudWatch logging features.
