@@ -643,6 +643,12 @@ COMPUTE_RESOURCE = {
             "default": 0,
             "update_policy": UpdatePolicy.COMPUTE_FLEET_STOP
         }),
+        ("real_memory_percentage", {
+            "type": FloatJsonParam,
+            # This param is managed automatically
+            "update_policy": UpdatePolicy.COMPUTE_FLEET_STOP,
+            "default": 90
+        }),
         ("vcpus", {
             "type": IntJsonParam,
             # This param is managed automatically
@@ -656,6 +662,13 @@ COMPUTE_RESOURCE = {
             "update_policy": UpdatePolicy.IGNORED,
             "visibility": Visibility.PRIVATE,
             "default": 0
+        }),
+        ("real_memory", {
+            "type": IntJsonParam,
+            # This param is managed automatically
+            "update_policy": UpdatePolicy.IGNORED,
+            "visibility": Visibility.PRIVATE,
+            "default": 1
         }),
         ("enable_efa", {
             "type": BooleanJsonParam,
