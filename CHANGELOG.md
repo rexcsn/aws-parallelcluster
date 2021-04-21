@@ -14,9 +14,6 @@ CHANGELOG
 
 - Ubuntu 16.04 is no longer supported.
 - Amazon Linux is no longer supported.
-- Upgrade Slurm to version 20.11.4.
-  - Add new SlurmctldParameters, power_save_min_interval=30, so power actions will be processed every 30 seconds
-  - Specify instance GPU model as GRES GPU Type in gres.conf, instead of previous hardcoded value for all GPU, Type=tesla
 - Make `key_name` parameter optional to support cluster configurations without a key pair. 
 - Remove support for Python versions < 3.6.
 - Remove dependency on `future` package and `__future__` module.
